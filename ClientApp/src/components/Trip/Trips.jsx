@@ -1,23 +1,38 @@
 import React, { Component } from 'react'
 import axios from 'axios'
-export class Trips extends Component
-{
+import { connect } from 'react - redux';
+import { getAllTrips } from '../../actions/tripActions';
+
+export class Trips extends Component {
     constructor(props) {
         super(props);
 
+        this.onTripUpdate = this.onTripUpdate.bind(this);
+
         this.state = {
             trips: [],
-            loading : false
+            loading: false
         }
     }
 
     componentDidMount() {
-        this.populateTripsData();
+        this.props.getAllTrips();
+    }
+
+    componentDidUpdate(prevProps) {
+        if (prevProps.trips.data != this.props.trips.data) {
+            this.setState({ trips: this.props.trips.data });
+        }
+    }
+
+    onTripUpdate(id) {
+        const { history } = this.props;
+        history.push('/update/' + id);
     }
 
     populateTripsData() {
         axios.get("api/Trips/GetTrips").then(result => {
-            const response = result.data;  
+            const response = result.data;
             this.setState({ trips: response, loading: false });
         })
     }
@@ -42,7 +57,13 @@ export class Trips extends Component
                                 <td>{trip.description}</td>
                                 <td>{trip.dateStarted}</td>
                                 <td>{trip.dateCompleted}</td>
-                                <td> - </td>
+                                <td>
+                                    <div className="form-group">
+                                        <button onClick={() => this.onTripUpdate(trip.id)} className="btn btn-success">
+                                            Update
+                                        </button>
+                                    </div>
+                                </td>
                             </tr>
                         ))
                     }
@@ -53,13 +74,22 @@ export class Trips extends Component
 
     render() {
 
-        let content = this.state.loading ? (
-            <p>
-                <em>Loading...</em>
-            </p>
-        ) : (
-            this.renderAllTripsTable(this.state.trips)
-        )
+        //let content = this.state.loading ? (
+        //    <p>
+        //        <em>Loading...</em>
+        //    </p>
+        //) : (
+        //    this.renderAllTripsTable(this.state.trips)
+        //)
+
+        let content = this.props.trips.loading ?
+            (
+                <p>
+                    <em>Loading...</em>
+                </p>
+            ) : (
+                this.state.trips.length && this.renderAllTripsTable(this.state.trips)
+            );
 
         return (
             <div>
@@ -70,3 +100,9 @@ export class Trips extends Component
         );
     }
 }
+
+const mapStateToProps = ({ trips }) => ({
+    trips
+});
+
+export default connect(mapStateToProps, { getAllTrips })(Trips);
